@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Virtual lab experiment template." />
+  <!-- Title is overwritten from js/config.js at start-up; keep a sensible fallback here -->
+  <title>Virtual Lab Experiment</title>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" href="images/nitk.webp" />
+
+  <!-- KaTeX (LaTeX rendering for formulas, calculation and help text) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <!-- Styles (order matters: tokens -> layout -> components -> dashboard -> modal -> responsive) -->
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/modal.css" />
+  <link rel="stylesheet" href="css/scene-ui.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+
+  <!-- Three.js is only needed by js/scene.js (loaded lazily by app.js).
+       If you use a 2D canvas instead, you can delete this import map. -->
+  <script type="importmap">
+    { "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+  <script type="module" src="js/app.js"></script>
+</head>
+
+<!-- "dashboard-active" = start on the card dashboard. JS removes it when a section is opened. -->
+<body class="dashboard-active">
+
+  <!-- ================= HEADER ================= -->
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="logo-div"><img id="labLogo" class="logo" src="images/nitk.webp" alt="Institution logo" /></div>
+      <h1 id="labTitle">Experiment Title</h1>
+    </div>
+  </header>
+
+  <div class="app-container">
+
+    <!-- ================= LEFT NAVIGATION RAIL (filled from config.sections) ================= -->
+    <nav class="sidebar" aria-label="Experiment sections">
+      <ul id="navMenu" class="tool-menu"></ul>
+    </nav>
+
+    <main class="main">
+
+      <!-- ================= DASHBOARD (first screen, cards filled from config.sections) ================= -->
+      <div id="dashboardView" class="dashboard-view"></div>
+
+      <!-- ================= WORKSPACE CARD ================= -->
+      <!-- data-section : id of the visible section (set by JS)
+           data-interactive : "true" shows Controls/Variables in the side panel, "false" shows the info card
+           data-side : "on" | "off" — "off" hides the side panel completely -->
+      <section id="workspaceCard" class="workspace-card" data-section="simulation" data-interactive="true" data-side="on">
+
+        <div class="task-heading">
+          <h2 id="workspaceTitle" class="task-title">Simulation</h2>
+          <div class="heading-actions">
+            <button id="helpButton" class="heading-button help-button" type="button" aria-label="Open help">?</button>
+            <button id="fullscreenButton" class="heading-button" type="button" aria-label="Toggle page fullscreen" title="Fullscreen">⛶</button>
+            <button id="dashboardCloseBtn" class="close-button" type="button" aria-label="Back to dashboard" title="Back to dashboard"><span class="close-icon">✕</span> Close</button>
+          </div>
+        </div>
+
+        <!-- Status bar (only visible on interactive sections) -->
+        <div class="simulation-toolbar">
+          <div class="status-chip">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="experimentStatus">Ready</span>
+            <span id="liveAngle" class="current-angle">θ = 0.0°</span>
+          </div>
+          <span id="cgReadout" class="cg-readout">Centre of gravity from one end, L/2 = 0.400 m</span>
+        </div>
+
+        <div class="lab-stage">
+
+          <!-- ---------- Main viewport: one <section class="panel"> per config section ---------- -->
+          <div id="workspaceViewport" class="workspace-viewport">
+
+            <!-- SIMULATION: mount point for the 3D (or 2D) scene -->
+            <section id="panel-simulation" class="panel panel--fill" data-panel="simulation" hidden>
+              <div id="simulationWindow" class="sim-window">
+                <button id="viewportFullscreenButton" class="viewport-fullscreen-btn" type="button"
+                  aria-label="Toggle viewport full mode" title="Full viewport mode">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                  </svg>
+                </button>
+                <div id="simViewport" class="sim-viewport" role="img"
+                  aria-label="Interactive simulation. Drag empty space to orbit the view."></div>
+                <p id="dragHint" class="drag-hint" hidden></p>
+              </div>
+            </section>
+
+            <!-- DIAGRAM -->
+            <section id="panel-diagram" class="panel" data-panel="diagram" hidden>
+              <figure class="diagram-figure">
+                <img id="diagramImage" src="images/diagram-placeholder.svg" alt="Experiment diagram" />
+                <figcaption id="diagramCaption" class="diagram-caption"></figcaption>
+              </figure>
+            </section>
+
+            <!-- FORMULA -->
+            <section id="panel-formula" class="panel" data-panel="formula" hidden>
+              <div class="formula-workspace">
+                <div class="formula-selector-card">
+                  <label for="formulaSelect">Select Formula:</label>
+                  <select id="formulaSelect" class="formula-dropdown"></select>
+                </div>
+                <div class="formula-detail-card">
+                  <div class="formula-usage-box">
+                    <span class="box-label">Usage &amp; Application</span>
+                    <p id="formulaUsage" class="formula-usage-text"></p>
+                  </div>
+                  <div class="formula-display-grid">
+                    <div class="formula-latex-box">
+                      <span class="box-label">Formula</span>
+                      <div id="formulaLatex" class="latex-render"></div>
+                    </div>
+                    <div class="formula-variables-box">
+                      <span class="box-label">Variables &amp; Constants</span>
+                      <ul id="formulaVariables" class="variables-list"></ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- CALCULATION (inputs + steps generated from config.calculation) -->
+            <section id="panel-calculation" class="panel" data-panel="calculation" hidden>
+              <div class="calc-workspace">
+                <div class="calc-inputs">
+                  <h3 class="calc-heading">Calculation Variables</h3>
+                  <div id="calcInputs" class="calc-input-grid"></div>
+                </div>
+                <div id="calcSteps" class="calc-steps"></div>
+              </div>
+            </section>
+
+            <!-- OBSERVATION -->
+            <section id="panel-observation" class="panel" data-panel="observation" hidden>
+              <div class="observation-workspace">
+                <div class="observation-box">
+                  <span class="observation-heading">Observation</span>
+                  <p id="observationText"></p>
+                </div>
+                <div class="readings-table-wrap">
+                  <p id="readingsHeading" class="table-heading">Recorded readings</p>
+                  <div class="table-scroll">
+                    <table class="readings-table">
+                      <thead id="readingsHead"></thead>
+                      <tbody id="readingsBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- RESULTS (readouts generated from config.results) -->
+            <section id="panel-results" class="panel" data-panel="results" hidden>
+              <div class="results-workspace">
+                <div id="readoutGrid" class="readout-grid"></div>
+                <div id="meterBar" class="meter-readout" hidden>
+                  <span id="meterLabel"></span>
+                  <strong id="meterValue"></strong>
+                  <i class="meter-track"><b id="meterFill"></b></i>
+                </div>
+              </div>
+            </section>
+
+          </div><!-- /workspace-viewport -->
+
+          <!-- ---------- Right side panel ---------- -->
+          <aside class="side-panel" aria-label="Experiment controls">
+
+            <!-- Shown when data-interactive="true" -->
+            <div id="sideControls" class="side-controls">
+
+              <details id="controlsCard" class="side-details" open>
+                <summary><span>Controls</span></summary>
+                <div class="card-body">
+                  <!-- config.extraButtons are appended to this grid by controls.js -->
+                  <div id="actionButtons" class="control-actions-grid">
+                    <button id="startButton" class="control-button primary" type="button">Start</button>
+                    <button id="pauseButton" class="control-button" type="button">Pause</button>
+                    <button id="resetButton" class="control-button" type="button">Reset</button>
+                  </div>
+
+                  <div id="toggleGroup" class="control-group">
+                    <span class="group-label">Show</span>
+                    <div id="toggleList" class="display-controls"></div>
+                  </div>
+                </div>
+              </details>
+
+              <details id="variablesCard" class="side-details">
+                <summary><span>Variables</span></summary>
+                <div class="card-body">
+                  <div id="variablesList" class="variables-sections"></div>
+                </div>
+              </details>
+
+            </div>
+
+            <!-- Shown when data-interactive="false" (content from config.sideInfo) -->
+            <div id="sideInfo" class="side-info"></div>
+
+          </aside>
+        </div><!-- /lab-stage -->
+      </section>
+
+      <footer class="footer"><p id="footerText">Copyright © Virtual Lab</p></footer>
+    </main>
+  </div>
+
+  <!-- ================= HELP / FAQ MODAL (content from config.help) ================= -->
+  <div id="helpOverlay" class="faq-modal-overlay" hidden aria-hidden="true">
+    <div id="helpPopover" class="faq-modal-container" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <header class="faq-modal-header">
+        <div class="header-text">
+          <h2 id="helpTitle" class="faq-modal-title">Procedure &amp; Operating Guide</h2>
+          <p id="helpSubtitle" class="faq-modal-subtitle">Select a topic from the list to view the procedure</p>
+        </div>
+        <button id="closeHelpButton" class="faq-close-btn" type="button" aria-label="Close guide">&times;</button>
+      </header>
+      <div class="faq-modal-body">
+        <nav class="faq-question-sidebar" aria-label="Guide topics">
+          <ul id="faqQuestionList" class="faq-question-list"></ul>
+        </nav>
+        <div class="faq-procedure-viewport">
+          <article id="faqProcedureContent" class="faq-procedure-card"></article>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
